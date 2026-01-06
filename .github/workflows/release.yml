@@ -24,9 +24,37 @@ jobs:
         pip install pyinstaller fastapi uvicorn numpy
         pip install llama-cpp-python --prefer-binary
     
+    - name: Find Llama DLL
+      id: deps
+      run: |
+        $LLAMA_PATH = python find_llama_dll.py
+        echo "LLAMA_LIB=$LLAMA_PATH" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
     - name: Build with PyInstaller
       run: |
-        pyinstaller --name Cortex --onedir --console src/server.py
+        pyinstaller --noconfirm --onedir --console --name "Cortex" `
+          --add-data "src;src" `
+          --add-data "${{ steps.deps.outputs.LLAMA_LIB }};llama_cpp/lib" `
+          --exclude-module torch `
+          --exclude-module pandas `
+          --exclude-module sklearn `
+          --exclude-module scipy `
+          --exclude-module matplotlib `
+          --exclude-module cv2 `
+          --exclude-module skimage `
+          --exclude-module PIL `
+          --hidden-import="uvicorn.logging" `
+          --hidden-import="uvicorn.loops" `
+          --hidden-import="uvicorn.loops.auto" `
+          --hidden-import="uvicorn.protocols" `
+          --hidden-import="uvicorn.protocols.http" `
+          --hidden-import="uvicorn.protocols.http.auto" `
+          --hidden-import="uvicorn.protocols.websockets" `
+          --hidden-import="uvicorn.protocols.websockets.auto" `
+          --hidden-import="uvicorn.lifespan.on" `
+          src/server.py
+      shell: pwsh
     
     - name: Prepare release package
       run: |
@@ -39,6 +67,7 @@ jobs:
         Copy-Item README.md release\CortexAI\
         Copy-Item README_ja.md release\CortexAI\
         Copy-Item LICENSE release\CortexAI\
+        Copy-Item persona.txt release\CortexAI\
       shell: pwsh
     
     - name: Create ZIP
@@ -49,6 +78,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: CortexAI-${{ github.ref_name }}-windows.zip
-        generate_release_notes: true
+        body_path: RELEASE_NOTES.md
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
