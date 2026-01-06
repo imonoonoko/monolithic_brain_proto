@@ -16,15 +16,16 @@ Initial public release of Project Cortex, a standalone AI engine designed for Ga
 ## 📦 What's Included
 
 - `Cortex.exe`: The standalone engine.
-- `models/`: Pre-configured Qwen2.5-1.5B GGUF model.
+- `setup_models.bat`: **Run this first!** Downloads the AI model (1GB).
 - [persona.txt](persona.txt): Editable text file to customize your NPC's personality.
 - `examples/`: Integration code for Minecraft and Skyrim.
 
 ## 🚀 Quick Start
 
 1. Extract the zip to your Mod folder (DO NOT put in Program Files).
-2. Run `Cortex.exe`.
-3. Send a POST request to `http://127.0.0.1:8000/chat`.
+2. **Run `setup_models.bat`** to download the brain.
+3. Run `Cortex.exe`.
+4. Send a POST request to `http://127.0.0.1:8000/chat`.
 
 ## ⚠️ Notes
 
