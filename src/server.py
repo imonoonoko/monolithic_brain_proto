@@ -47,9 +47,21 @@ if not os.path.exists(model_path):
 print("\n--- [CortexAI] Initializing Monolithic Brain... ---")
 print(f"Loading Model: {model_path}")
 
-# Modders don't want to tweak params, so we hardcode the "Golden Ratio" here
+# --- Persona Loading (Modder-friendly) ---
+# Modderはこのファイルを編集することで、コードを触らずに性格を変更できます
+PERSONA_FILE = os.path.join(ROOT_DIR, "persona.txt")
+DEFAULT_PERSONA = "あなたは賢明な哲学者であり、プレイヤーの忠実な冒険仲間です。"
+
+if os.path.exists(PERSONA_FILE):
+    with open(PERSONA_FILE, "r", encoding="utf-8") as f:
+        system_prompt = f.read().strip()
+    print(f"[Persona] Loaded from persona.txt: {system_prompt[:50]}...")
+else:
+    system_prompt = DEFAULT_PERSONA
+    print(f"[Persona] Using default: {DEFAULT_PERSONA[:50]}...")
+
 brain = MonolithicCortex(
-    system_prompt="あなたは賢明な哲学者であり、プレイヤーの忠実な冒険仲間です。",
+    system_prompt=system_prompt,
     model_path=model_path
 )
 current_context: Dict[str, Any] = {}

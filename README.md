@@ -32,6 +32,7 @@ Cortex is a standalone AI engine that gives your game NPCs **memory** and **emot
 ```
 CortexAI/
 ├── Cortex.exe           # The brain engine (just run this)
+├── persona.txt          # NPC personality (edit to customize!)
 ├── models/
 │   └── qwen-1.5b.gguf   # The brain itself
 ├── memories/            # Where HDC memory data accumulates
@@ -41,6 +42,8 @@ CortexAI/
     ├── Minecraft_Mod/   # Sample code for Minecraft
     └── Skyrim_Mod/      # Sample code for Skyrim
 ```
+
+> ⚠️ **Important:** Do NOT extract to `Program Files` or other write-protected locations. Extract to your Mod folder or Desktop for proper operation.
 
 ---
 

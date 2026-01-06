@@ -32,14 +32,18 @@ CortexはゲームNPCに**記憶**と**感情**を与える、スタンドアロ
 ```
 CortexAI/
 ├── Cortex.exe           # 思考エンジン本体（これを起動するだけ）
+├── persona.txt          # NPC性格設定（編集してカスタマイズ！）
 ├── models/
 │   └── qwen-1.5b.gguf   # 脳の実体
 ├── memories/            # HDC記憶データが蓄積される場所
 │   ├── Villager_A.mem   # 村人Aの記憶
 │   └── Lydia.mem        # リディアの記憶
 └── examples/
-    └── Minecraft_Mod/   # サンプルコード
+    ├── Minecraft_Mod/   # Minecraftサンプルコード
+    └── Skyrim_Mod/      # Skyrimサンプルコード
 ```
+
+> ⚠️ **重要:** `Program Files` などの書き込み禁止フォルダには展開しないでください。Modフォルダやデスクトップに展開してご使用ください。
 
 ---
 
