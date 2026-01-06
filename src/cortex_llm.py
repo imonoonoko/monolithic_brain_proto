@@ -1,13 +1,14 @@
 import numpy as np
-import torch
 from llama_cpp import Llama
 from typing import Generator, Tuple, List, Dict, Any, Optional
 import config
+from hippocampus import Hippocampus
 
 class MonolithicCortex:
     """
-    Low-level Monolithic Brain implementation using manual eval loop.
-    Unifies Language (Left) and Meaning (Right) hemispheres into a single stream.
+    create_completion ストリームを使用した高レベルなモノリシック脳実装。
+    logprobs を使用して能動的推論（Active Inference / エントロピー）を近似します。
+    Hippocampus モジュールにより、思考パターンをHDCベクトルとして記憶化します。
     """
     def __init__(
         self, 
@@ -16,47 +17,39 @@ class MonolithicCortex:
         n_ctx: int = config.CTX_SIZE,
         n_gpu_layers: int = 0
     ):
-        """
-        Initialize Llama with embedding=True to enable the 'Right Hemisphere'.
-        """
-        print(f"[MonolithicCortex] Loading Model from {model_path}...")
+        print(f"[MonolithicCortex] モデルをロード中: {model_path}...")
         self.llm = Llama(
             model_path=model_path,
             n_ctx=n_ctx,
             n_gpu_layers=n_gpu_layers,
-            embedding=False, # Disabled to fix crash. Vectors will be zeros for now.
-            logits_all=True, # Re-enabled for Active Inference
+            embedding=False, 
+            logits_all=True,
             verbose=False
         )
         self.system_prompt = system_prompt
-        
-        # Cache management (Simple sliding window later, for now relying on Llama's smart context)
-        # self.cache = LlamaRamCache(capacity_bytes=...) 
-        
-        print(f"[MonolithicCortex] Initialized. Persona: {system_prompt[:30]}...")
+        # 海馬モジュールの初期化 (Zero-Cost Memory)
+        self.hippocampus = Hippocampus()
+        print(f"[MonolithicCortex] 初期化完了。ペルソナ: {system_prompt[:30]}...")
 
-    def calculate_entropy(self, logits: np.ndarray, top_k: int = 40) -> float:
+    def calculate_entropy_from_logprobs(self, top_logprobs: Dict[str, float]) -> float:
         """
-        Calculates Shannon entropy of the next token distribution with Top-K filtering.
-        Used for Active Inference (Metacognition).
+        APIから提供された top_k logprobs からシャノンエントロピーを計算します。
+        思考の「迷い」や「不確実性」を数値化するために使用されます。
         """
-        # 1. Softmax & Top-K
-        # Explicitly copy to avoid side effects if strictly needed, but here simple ops are fine
-        
-        # Get indices of top_k values
-        if top_k > 0 and top_k < len(logits):
-            top_k_indices = np.argpartition(logits, -top_k)[-top_k:]
-            top_k_logits = logits[top_k_indices]
-            # We don't need accurate global probs, just local uncertainty shape
-            logits = top_k_logits
+        if not top_logprobs:
+            return 0.0
             
-        # Stable Softmax
-        # Subtract max for stability
-        logits = logits - np.max(logits)
-        exp_logits = np.exp(logits)
-        probs = exp_logits / np.sum(exp_logits)
+        # 値（対数確率）を抽出
+        log_probs = np.array(list(top_logprobs.values()))
         
-        # 3. Entropy calc: -sum(p * log(p))
+        # 確率に変換
+        probs = np.exp(log_probs)
+        
+        # 正規化（top_k のみで計算するため、合計が1.0になるように再調整）
+        # これにより、上位候補の中での相対的な迷いを算出します。
+        probs = probs / (np.sum(probs) + 1e-10)
+        
+        # エントロピー計算: -sum(p * log(p))
         entropy = -np.sum(probs * np.log(probs + 1e-10))
         return float(entropy)
 
@@ -65,96 +58,75 @@ class MonolithicCortex:
         user_input: str, 
         game_context: Optional[Dict[str, Any]] = None,
         max_tokens: int = 128,
-        temperature: float = 0.7,
-        stop_tokens: List[str] = ["User:", "System:", "\n\n"]
+        temperature: float = 0.4, # 0.3->0.4 少し緩和して表現の幅を広げる
+        repeat_penalty: float = 1.05, # ループ防止のため1.05に設定（1.0だとループする）
+        stop_tokens: List[str] = [
+            "<|im_end|>", 
+            "<|endoftext|>", 
+            "User:", 
+            "Human:", 
+            "HumanHuman:", 
+            "Assistant:", 
+            "\n\n"
+        ] # ストップワード強化
     ) -> Generator[Tuple[str, np.ndarray, float], None, None]:
         """
-        Generator that yields (token, vector, entropy) at every step.
+        思考ストリームを生成するジェネレータ。
+        各ステップで (トークン文字列, 埋め込みベクトル, エントロピー値) を返します。
         """
-        # 1. Construct Prompt
-        #    [System] + [Status] + [User]
         context_str = self._format_context(game_context)
         
-        # ChatML-ish or Simple format
-        full_prompt = f"System: {self.system_prompt}\n{context_str}\nUser: {user_input}\nAssistant:"
+        # Qwen ChatML Format
+        # <|im_start|>system...<|im_end|><|im_start|>user...<|im_end|><|im_start|>assistant
+        sys_content = f"{self.system_prompt}\n{context_str}"
         
-        # 2. Tokenize & Prefill (eval full prompt)
-        tokens = self.llm.tokenize(full_prompt.encode("utf-8"))
-        print(f"[DEBUG] Full Prompt: {full_prompt[:50]}...")
-        print(f"[DEBUG] Token Count: {len(tokens)}")
-        print(f"[DEBUG] Tokens: {tokens[:10]}...")
+        full_prompt = (
+            f"<|im_start|>system\n{sys_content}<|im_end|>\n"
+            f"<|im_start|>user\n{user_input}<|im_end|>\n"
+            f"<|im_start|>assistant\n"
+        )
         
-        if not tokens:
-            print("[DEBUG] No tokens to eval!")
-            return
-
-        # Prefill
-        try:
-            self.llm.eval(tokens)
-        except Exception as e:
-            print(f"[DEBUG] CRASH during prefill eval: {e}")
-            raise e
+        # create_completion をストリーミングモードかつ logprobs 有効で呼び出す
+        stream = self.llm.create_completion(
+            full_prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            repeat_penalty=repeat_penalty,
+            stop=stop_tokens,
+            stream=True,
+            logprobs=40 # 能動的推論 & 海馬記憶形成に必要
+        )
         
-        # 3. Generation Loop
-        
-        # Track generated tokens to handle stop sequences manually if needed (or simply check current string)
-        generated_text = ""
-        
-        for _ in range(max_tokens):
-            # A. Get Logits & Embedding from cache (Result of previous eval)
-            # logits() returns logits for the LAST token evaluated
-            logits = np.array(self.llm.logits())
-            logits = logits[-1, :] if logits.ndim > 1 else logits # Handle batch dim if present
-            
-            # embeddings() returns embedding for the LAST token evaluated
-            if self.llm.context_params.embedding:
-                embedding = np.array(self.llm.embeddings())
-                # embedding might be list of lists if batch > 1
-                if embedding.ndim > 1:
-                     embedding = embedding[-1]
-            else:
-                embedding = np.zeros(1536) # Fallback (should not happen if init correct)
-
-            # B. Calc Entropy (Active Inference)
-            entropy = self.calculate_entropy(logits)
-            
-            # C. Sample Next Token
-            # sample() expects logits
-            next_token_id = self.llm.sample(
-                logits, 
-                temperature=temperature,
-                top_p=0.9
-            )
-            
-            # D. Decode
-            token_str = self.llm.detokenize([next_token_id]).decode("utf-8", errors="ignore")
-            generated_text += token_str
-            
-            # E. Yield Result (Synchronous Thought & Speech)
-            yield token_str, embedding, entropy
-            
-            # F. Check Stop Conditions
-            if next_token_id == self.llm.token_eos():
-                break
-            
-            stop_hit = False
-            for s in stop_tokens:
-                if s in generated_text: # Simple check, might need strict suffix check
-                    # If we generated a stop token, we break. 
-                    # Refinement: Check if the *newly added* text completes a stop seq.
-                    # For simple "User:", this is fine.
-                    stop_hit = True
+        for chunk in stream:
+            try:
+                choice = chunk["choices"][0]
+                text = choice["text"]
+                
+                # エントロピーの抽出 & 思考ベクトルの形成
+                entropy = 0.0
+                embedding = np.zeros(4096) # Default
+                
+                if "logprobs" in choice and choice["logprobs"] and "top_logprobs" in choice["logprobs"]:
+                    # top_logprobs は List[Dict] (チャンク内のトークンごと。通常は1つ)
+                    step_logprobs = choice["logprobs"]["top_logprobs"][0]
+                    
+                    # 1. Active Inference (Metacognition)
+                    entropy = self.calculate_entropy_from_logprobs(step_logprobs)
+                    
+                    # 2. Hippocampus Projection (Zero-Cost Memory)
+                    # 思考パターン(logprobs)を直接ベクトルに焼き付ける
+                    embedding = self.hippocampus.project_thought(step_logprobs)
+                
+                yield text, embedding, entropy
+                
+                if choice["finish_reason"] is not None:
                     break
-            if stop_hit:
-                break
-
-            # G. Update Cache (eval next token)
-            self.llm.eval([next_token_id])
+                    
+            except KeyError:
+                continue
 
     def _format_context(self, context: Optional[Dict[str, Any]]) -> str:
-        """Helper to format dictionary into [Status: ...] string"""
         if not context:
             return ""
-        # Simple Key-Value dump
         s = ", ".join([f"{k}={v}" for k, v in context.items()])
         return f"[System: Status={{{s}}}]"

@@ -2,6 +2,9 @@ import time
 import torch
 import numpy as np
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 from monolithic_brain import NeuralSymbolicBrain
 
 def run_benchmark():

@@ -1,5 +1,9 @@
 import torch
-from monolithic_brain import NeuralSymbolicBrain
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+from cortex_llm import MonolithicCortex
+from hippocampus import Hippocampus
 
 def verify_memory():
     model_filename = "qwen2.5-1.5b-instruct-q4_k_m.gguf"

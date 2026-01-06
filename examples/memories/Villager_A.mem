@@ -1,0 +1,26 @@
+[
+  {
+    "id": "example-001",
+    "timestamp": "2026-01-05T10:30:00",
+    "user_input": "こんにちは、村人さん！",
+    "response": "おお、旅人よ！ようこそ我が村へ。何かお探しですか？",
+    "vector": "EXAMPLE_VECTOR_DATA_BASE64_ENCODED...",
+    "importance": 0.45
+  },
+  {
+    "id": "example-002",
+    "timestamp": "2026-01-05T10:32:00",
+    "user_input": "この辺りで何か困ってることはある？",
+    "response": "実は...最近、北の洞窟からモンスターが出てきて困っているのです。勇敢な冒険者様に退治してもらえると助かります。",
+    "vector": "EXAMPLE_VECTOR_DATA_BASE64_ENCODED...",
+    "importance": 0.78
+  },
+  {
+    "id": "example-003",
+    "timestamp": "2026-01-05T14:00:00",
+    "user_input": "洞窟のモンスター、退治してきたよ！",
+    "response": "本当ですか！？ありがとうございます！これはお礼です。あなたのことは一生忘れません！",
+    "vector": "EXAMPLE_VECTOR_DATA_BASE64_ENCODED...",
+    "importance": 0.95
+  }
+]

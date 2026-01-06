@@ -1,2 +1,61 @@
-/.agent
-/docs
+# ============================================
+# Project Cortex - .gitignore
+# ============================================
+
+# --- Build Outputs ---
+dist/
+build/
+*.spec
+*.exe
+!examples/**/*.exe
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+ENV/
+
+# --- Models (Large Files) ---
+*.gguf
+*.bin
+*.safetensors
+*.brain
+models/*.gguf
+
+# --- Memory Data (User-specific) ---
+memories/*.json
+memories/*.mem
+!examples/memories/*.mem
+
+# --- IDE/Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Temp Files ---
+*.tmp
+*.temp
+*.bak
+
+# --- Agent/Dev Files ---
+.agent/
+*.cursor/
+
+# --- PyInstaller ---
+*.manifest
+*.pdb

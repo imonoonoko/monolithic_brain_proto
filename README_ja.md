@@ -2,28 +2,28 @@
 
 > **"Inject a Cortex into your NPCs."**
 > 
-> Give your game characters a brain, not just a script.
+> あなたのNPCに、脳を注入しよう。
 
-[🇯🇵 日本語版 README](README_ja.md)
+[🇺🇸 English README](README.md)
 
 ---
 
-**Lightweight** — Runs on just 1GB of RAM  
-**Persistent** — Remembers conversations like geological layers, never forgets  
-**Autonomous** — Doesn't just answer, thinks, hesitates, and acts on its own
+**Lightweight** — メモリ1GBで動作する極小の脳  
+**Persistent** — 会話を「地層」のように記憶し、決して忘れない  
+**Autonomous** — ただ答えるだけでなく、自ら考え、悩み、行動する
 
 ---
 
 ## ✨ What is Cortex?
 
-Cortex is a standalone AI engine that gives your game NPCs **memory** and **emotion**.
+CortexはゲームNPCに**記憶**と**感情**を与える、スタンドアロンAIエンジンです。
 
 | Feature | Description |
 |---------|-------------|
-| 🗣️ **Natural Dialogue** | Powered by LLM (Qwen2.5-1.5B) |
-| 🧠 **Memory (HDC)** | Remembers past conversations and recalls relevant topics |
-| 😊 **Emotion** | Detects emotion from thought certainty (`confident`, `neutral`, `uncertain`, `confused`) |
-| 📦 **Standalone** | No Python required, just run `Cortex.exe` |
+| 🗣️ **Natural Dialogue** | LLM (Qwen2.5-1.5B) による自然な会話 |
+| 🧠 **Memory (HDC)** | 過去の会話を記憶し、関連する話題で想起 |
+| 😊 **Emotion** | 思考の確信度から感情を検出 (`confident`, `neutral`, `uncertain`, `confused`) |
+| 📦 **Standalone** | Python不要、`Cortex.exe` 単体で動作 |
 
 ---
 
@@ -31,15 +31,14 @@ Cortex is a standalone AI engine that gives your game NPCs **memory** and **emot
 
 ```
 CortexAI/
-├── Cortex.exe           # The brain engine (just run this)
+├── Cortex.exe           # 思考エンジン本体（これを起動するだけ）
 ├── models/
-│   └── qwen-1.5b.gguf   # The brain itself
-├── memories/            # Where HDC memory data accumulates
-│   ├── Villager_A.mem   # Villager A's memories
-│   └── Lydia.mem        # Lydia's memories
+│   └── qwen-1.5b.gguf   # 脳の実体
+├── memories/            # HDC記憶データが蓄積される場所
+│   ├── Villager_A.mem   # 村人Aの記憶
+│   └── Lydia.mem        # リディアの記憶
 └── examples/
-    ├── Minecraft_Mod/   # Sample code for Minecraft
-    └── Skyrim_Mod/      # Sample code for Skyrim
+    └── Minecraft_Mod/   # サンプルコード
 ```
 
 ---
@@ -57,14 +56,14 @@ Cortex.exe
 import requests
 
 response = requests.post("http://127.0.0.1:8000/chat", json={
-    "text": "Hello, introduce yourself!",
+    "text": "こんにちは、自己紹介して",
     "speaker": "Player"
 })
 
 npc_reply = response.json()
 print(f"NPC: {npc_reply['reply']}")
 print(f"Emotion: {npc_reply['emotion']}")
-# NPC: I am a wise philosopher and your loyal companion...
+# NPC: 私は賢明な哲学者であり...
 # Emotion: confident
 ```
 
@@ -78,7 +77,7 @@ Main conversation endpoint.
 **Request:**
 ```json
 {
-  "text": "Player's message",
+  "text": "プレイヤーの発言",
   "speaker": "Player"
 }
 ```
@@ -86,10 +85,10 @@ Main conversation endpoint.
 **Response:**
 ```json
 {
-  "reply": "NPC's response",
+  "reply": "NPCの応答",
   "emotion": "confident | neutral | uncertain | confused",
   "resonance": 0-100,
-  "memories_recalled": [{"text": "Past message", "similarity": 0.85}]
+  "memories_recalled": [{"text": "過去の発言", "similarity": 0.85}]
 }
 ```
 
@@ -128,9 +127,9 @@ Reset all memories and conversation history.
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Cortex (Cerebral Cortex)** — Transformer LLM generates thoughts  
-**Hippocampus** — Projects thoughts into 4096-dim vectors, similarity search  
-**Memory (Geological Memory)** — Conversations accumulate and persist
+**Cortex (大脳皮質)** — Transformer LLM が思考を生成  
+**Hippocampus (海馬)** — 思考を4096次元ベクトルに投影、類似検索  
+**Memory (地層記憶)** — 会話が蓄積され、永続化
 
 ---
 
@@ -160,16 +159,28 @@ python src/server.py
 
 ## 🎮 Integration Examples
 
-See the `examples/` folder for complete integration code:
+### Minecraft (Lua)
+```lua
+local http = require("http")
+local response = http.post("http://127.0.0.1:8000/chat", {
+    text = "What should I do today?",
+    speaker = "Steve"
+})
+npc:say(response.reply)
+```
 
-- **[Minecraft (Lua)](examples/Minecraft_Mod/)** — ComputerCraft integration
-- **[Skyrim (Papyrus)](examples/Skyrim_Mod/)** — SKSE script examples
+### Skyrim (Papyrus)
+```papyrus
+; Call Cortex API via SKSE HTTP plugin
+String response = CortexAPI.Chat("Hello traveler!", "Player")
+Debug.Notification(response)
+```
 
 ---
 
 ## 📄 License
 
-MIT License - See [LICENSE](LICENSE)
+MIT License
 
 ---
 
@@ -177,7 +188,7 @@ MIT License - See [LICENSE](LICENSE)
 
 - [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
 - [Qwen2.5](https://github.com/QwenLM/Qwen2.5)
-- Hyperdimensional Computing research
+- Hyperdimensional Computing concept
 
 ---
 
